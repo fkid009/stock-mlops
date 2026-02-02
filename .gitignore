@@ -37,7 +37,7 @@ ENV/
 .env.*.local
 
 # Data and models (local only)
-data/
+/data/
 *.db
 *.sqlite
 *.parquet
