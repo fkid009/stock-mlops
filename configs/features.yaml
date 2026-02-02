@@ -1,0 +1,42 @@
+# Feature definitions for stock prediction
+
+primary_features:
+  return_1d:
+    description: "1-day return (yesterday vs today)"
+    formula: "(close - close.shift(1)) / close.shift(1)"
+
+  return_5d:
+    description: "5-day return"
+    formula: "(close - close.shift(5)) / close.shift(5)"
+
+  volume_ratio:
+    description: "Volume relative to 20-day average"
+    formula: "volume / volume.rolling(20).mean()"
+
+  high_low_range:
+    description: "Daily price range relative to open"
+    formula: "(high - low) / open"
+
+secondary_features:
+  ma_5_20_ratio:
+    description: "5-day MA / 20-day MA ratio"
+    formula: "close.rolling(5).mean() / close.rolling(20).mean()"
+
+  rsi_14:
+    description: "14-day Relative Strength Index"
+    window: 14
+
+  volatility_20:
+    description: "20-day rolling standard deviation of returns"
+    window: 20
+
+preprocessing:
+  scaler: "StandardScaler"
+  missing_values:
+    method: "forward_fill"
+    max_consecutive_missing: 5
+
+target:
+  name: "next_day_direction"
+  description: "Next day price movement (1=up, 0=down)"
+  threshold: 0.001  # ±0.1% considered neutral (excluded)
