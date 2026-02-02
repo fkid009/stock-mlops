@@ -60,8 +60,9 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY:-stock-mlops-secret}
       - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - DATABASE_URL=sqlite:///./data/stock.db
+      - DATABASE_URL=sqlite:////opt/airflow/data/stock.db
       - STOCK_SYMBOLS=${STOCK_SYMBOLS:-AAPL,GOOGL,MSFT}
+      - PYTHONPATH=/opt/airflow
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
@@ -88,8 +89,9 @@ services:
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
       - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - DATABASE_URL=sqlite:///./data/stock.db
+      - DATABASE_URL=sqlite:////opt/airflow/data/stock.db
       - STOCK_SYMBOLS=${STOCK_SYMBOLS:-AAPL,GOOGL,MSFT}
+      - PYTHONPATH=/opt/airflow
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
