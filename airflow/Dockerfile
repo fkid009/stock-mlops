@@ -1,5 +1,5 @@
 # Airflow Dockerfile
-FROM apache/airflow:2.7.3-python3.11
+FROM apache/airflow:2.8.1-python3.11
 
 USER root
 
@@ -12,9 +12,10 @@ USER airflow
 
 # Copy requirements and install
 COPY pyproject.toml README.md /tmp/
-RUN pip install --no-cache-dir /tmp/
+COPY src/ /tmp/src/
+RUN pip install --no-cache-dir -e /tmp/
 
 # Set Python path
-ENV PYTHONPATH="${PYTHONPATH}:/opt/airflow"
+ENV PYTHONPATH="${PYTHONPATH}:/opt/airflow:/tmp"
 
 # Copy source code will be done via volume mount
