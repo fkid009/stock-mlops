@@ -69,6 +69,7 @@ services:
       - ./configs:/opt/airflow/configs
       - ./data:/opt/airflow/data
       - airflow-logs:/opt/airflow/logs
+      - airflow-db:/opt/airflow
     command: webserver
     depends_on:
       - airflow-init
@@ -98,6 +99,7 @@ services:
       - ./configs:/opt/airflow/configs
       - ./data:/opt/airflow/data
       - airflow-logs:/opt/airflow/logs
+      - airflow-db:/opt/airflow
     command: scheduler
     depends_on:
       - airflow-init
@@ -118,6 +120,7 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
     volumes:
       - airflow-logs:/opt/airflow/logs
+      - airflow-db:/opt/airflow
     entrypoint: /bin/bash
     command:
       - -c
@@ -147,6 +150,7 @@ services:
 volumes:
   mlflow-data:
   airflow-logs:
+  airflow-db:
 
 networks:
   stock-network:
