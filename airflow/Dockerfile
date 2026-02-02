@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir \
     "scikit-learn>=1.3.0" \
     "lightgbm>=4.0.0" \
     "yfinance>=0.2.0" \
-    "mlflow>=2.9.0" \
+    "mlflow==2.9.0" \
     "pydantic>=2.0.0" \
     "pydantic-settings>=2.0.0" \
     "pyyaml>=6.0.0" \

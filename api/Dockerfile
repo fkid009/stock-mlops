@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     "scikit-learn>=1.3.0" \
     "lightgbm>=4.0.0" \
     "yfinance>=0.2.0" \
-    "mlflow>=2.9.0" \
+    "mlflow==2.9.0" \
     "fastapi>=0.104.0" \
     "uvicorn>=0.24.0" \
     "sqlalchemy>=2.0.0" \
