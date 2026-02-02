@@ -36,9 +36,15 @@ class ModelRegistry:
         self.client = MlflowClient()
 
         # Create or get experiment
+        # Use mlflow-artifacts:/ scheme to route artifacts through the tracking server
+        artifact_location = f"mlflow-artifacts:/{self.experiment_name}"
+
         experiment = mlflow.get_experiment_by_name(self.experiment_name)
         if experiment is None:
-            self.experiment_id = mlflow.create_experiment(self.experiment_name)
+            self.experiment_id = mlflow.create_experiment(
+                self.experiment_name,
+                artifact_location=artifact_location,
+            )
             logger.info(f"Created experiment: {self.experiment_name}")
         else:
             self.experiment_id = experiment.experiment_id

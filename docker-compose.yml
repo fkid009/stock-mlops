@@ -41,6 +41,8 @@ services:
       --port 5000
       --backend-store-uri sqlite:///mlflow/mlflow.db
       --default-artifact-root /mlflow/artifacts
+      --serve-artifacts
+      --artifacts-destination /mlflow/artifacts
     restart: unless-stopped
     networks:
       - stock-network
@@ -60,6 +62,7 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY:-stock-mlops-secret}
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_HTTP_REQUEST_TIMEOUT=600
       - DATABASE_URL=sqlite:////opt/airflow/data/stock.db
       - STOCK_SYMBOLS=${STOCK_SYMBOLS:-AAPL,GOOGL,MSFT}
       - PYTHONPATH=/opt/airflow
@@ -90,6 +93,7 @@ services:
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_HTTP_REQUEST_TIMEOUT=600
       - DATABASE_URL=sqlite:////opt/airflow/data/stock.db
       - STOCK_SYMBOLS=${STOCK_SYMBOLS:-AAPL,GOOGL,MSFT}
       - PYTHONPATH=/opt/airflow
