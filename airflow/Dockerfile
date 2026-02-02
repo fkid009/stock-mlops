@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 USER airflow
 
 # Copy requirements and install
-COPY pyproject.toml /tmp/
+COPY pyproject.toml README.md /tmp/
 RUN pip install --no-cache-dir /tmp/
 
 # Set Python path
