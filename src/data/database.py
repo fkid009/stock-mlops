@@ -110,16 +110,40 @@ class DatabaseManager:
             probability: Prediction probability
         """
         with self.Session() as session:
-            record = Prediction(
-                symbol=symbol,
-                date=date,
-                prediction=prediction,
-                probability=probability,
-                model_name=model_name,
+            # Check for existing prediction on the same day
+            date_start = datetime(date.year, date.month, date.day)
+            date_end = datetime(date.year, date.month, date.day, 23, 59, 59)
+
+            existing = (
+                session.query(Prediction)
+                .filter(
+                    Prediction.symbol == symbol,
+                    Prediction.date >= date_start,
+                    Prediction.date <= date_end,
+                )
+                .first()
             )
-            session.add(record)
+
+            if existing:
+                # Update existing prediction
+                existing.prediction = prediction
+                existing.probability = probability
+                existing.model_name = model_name
+                existing.date = date
+                logger.debug(f"Updated prediction for {symbol} on {date.date()}")
+            else:
+                # Create new prediction
+                record = Prediction(
+                    symbol=symbol,
+                    date=date,
+                    prediction=prediction,
+                    probability=probability,
+                    model_name=model_name,
+                )
+                session.add(record)
+                logger.debug(f"Saved prediction for {symbol} on {date.date()}")
+
             session.commit()
-            logger.debug(f"Saved prediction for {symbol} on {date.date()}")
 
     def update_actual(self, symbol: str, date: datetime, actual: int) -> None:
         """Update the actual value for a prediction.
