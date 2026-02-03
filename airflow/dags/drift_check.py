@@ -156,7 +156,7 @@ with DAG(
     "drift_check",
     default_args=default_args,
     description="Daily performance drift check",
-    schedule_interval="0 19 * * 1-5",  # Weekdays at 7 PM (after daily prediction)
+    schedule_interval="0 1 * * 1-5",  # Weekdays at 10 AM KST (UTC 01:00, after daily prediction)
     catchup=False,
     tags=["stock", "ml", "monitoring"],
 ) as dag:

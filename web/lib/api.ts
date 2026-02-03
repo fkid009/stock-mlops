@@ -9,8 +9,12 @@ const getApiBase = () => {
   }
   // Client-side: use relative URL or current host
   // API should be accessible at the same host on port 8000
+  if (window.location.hostname === 'lhb99.com') {
+    return 'https://api.lhb99.com';
+  }
   const host = window.location.hostname;
-  return `http://${host}:8000`;
+  return `http://${host}:8000`; 
+  
 };
 
 const client = axios.create({

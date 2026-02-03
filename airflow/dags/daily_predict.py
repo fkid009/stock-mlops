@@ -255,7 +255,7 @@ with DAG(
     "daily_prediction",
     default_args=default_args,
     description="Daily stock movement predictions",
-    schedule_interval="0 18 * * 1-5",  # Weekdays at 6 PM
+    schedule_interval="0 0 * * 1-5",  # Weekdays at 9 AM KST (UTC 00:00)
     catchup=False,
     tags=["stock", "ml", "prediction"],
 ) as dag:

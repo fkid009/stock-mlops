@@ -77,19 +77,19 @@ docker compose up -d
 
 ## 파이프라인
 
-### Weekly Training (일요일 00:00)
+### Weekly Training (일요일 09:00 KST)
 1. 데이터 수집 (150일)
 2. 피처 계산 + 스케일러 fit
 3. 3개 모델 학습 (Logistic L1, LightGBM, SVM)
 4. 최적 모델 선택 → MLflow 등록
 
-### Daily Prediction (평일 09:00)
+### Daily Prediction (평일 09:00 KST)
 1. 최신 데이터 수집
 2. 피처 계산 + 스케일링
 3. 예측 생성 → DB 저장
 4. 전일 예측 정확도 업데이트
 
-### Drift Detection (매일 10:00)
+### Drift Detection (평일 10:00 KST)
 - 최근 5일 vs 이전 30일 정확도 비교
 - 5% 이상 하락 시 튜닝 트리거
 
