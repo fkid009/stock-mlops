@@ -5,9 +5,10 @@ import { format } from 'date-fns';
 interface PredictionsListProps {
   data: any;
   isLoading: boolean;
+  error?: Error | null;
 }
 
-export function PredictionsList({ data, isLoading }: PredictionsListProps) {
+export function PredictionsList({ data, isLoading, error }: PredictionsListProps) {
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -25,12 +26,21 @@ export function PredictionsList({ data, isLoading }: PredictionsListProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-red-50 rounded-lg shadow p-6 text-center">
+        <p className="text-red-800 font-medium">Failed to load predictions</p>
+        <p className="text-red-600 text-sm mt-1">{error.message}</p>
+      </div>
+    );
+  }
+
   const predictions = data?.predictions || [];
 
   if (predictions.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
-        No predictions available
+        No predictions available yet
       </div>
     );
   }

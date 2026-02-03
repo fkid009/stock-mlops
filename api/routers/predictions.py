@@ -1,21 +1,16 @@
 """Predictions API router."""
 
 from datetime import datetime, date, time
-from functools import lru_cache
 from typing import Optional
 
 from fastapi import APIRouter, Query, HTTPException, Depends
 from pydantic import BaseModel
 
 from src.data import DatabaseManager
+from src.pipeline.utils import calculate_accuracy
+from api.dependencies import get_db
 
 router = APIRouter()
-
-
-@lru_cache
-def get_db() -> DatabaseManager:
-    """Get cached DatabaseManager instance."""
-    return DatabaseManager()
 
 
 class PredictionResponse(BaseModel):
@@ -115,11 +110,7 @@ async def get_predictions_by_date(
         }
 
     # Calculate accuracy if actuals are available
-    valid = df[df["actual"].notna()]
-    accuracy = None
-    if len(valid) > 0:
-        correct = (valid["prediction"] == valid["actual"]).sum()
-        accuracy = correct / len(valid)
+    accuracy = calculate_accuracy(df)
 
     return {
         "date": prediction_date.isoformat(),
@@ -142,11 +133,7 @@ async def get_predictions_by_symbol(
         raise HTTPException(status_code=404, detail=f"No predictions found for {symbol}")
 
     # Calculate overall accuracy
-    valid = df[df["actual"].notna()]
-    accuracy = None
-    if len(valid) > 0:
-        correct = (valid["prediction"] == valid["actual"]).sum()
-        accuracy = correct / len(valid)
+    accuracy = calculate_accuracy(df)
 
     return {
         "symbol": symbol.upper(),

@@ -20,20 +20,12 @@ default_args = {
 
 def collect_latest_data(**context):
     """Collect latest stock data."""
-    from src.common import get_config
-    from src.data import StockDataCollector, DataCache
+    from src.pipeline import collect_and_cache_data
 
-    config = get_config()
-    collector = StockDataCollector(config.symbols_list)
-    cache = DataCache()
-
-    for symbol in config.symbols_list:
-        df = collector.fetch_latest(symbol, days=30)
-        if not df.empty:
-            cache.save(symbol, df)
+    results = collect_and_cache_data(days=30, use_latest=True)
 
     context["ti"].xcom_push(key="data_date", value=datetime.now().isoformat())
-    return f"Collected latest data for {len(config.symbols_list)} symbols"
+    return f"Collected latest data for {len(results)} symbols"
 
 
 def update_actuals(**context):
@@ -87,9 +79,10 @@ def update_actuals(**context):
 
 def calculate_daily_accuracy(**context):
     """Calculate and save daily accuracy."""
-    from datetime import datetime, timedelta
+    from datetime import datetime
     import pandas as pd
     from src.data import DatabaseManager
+    from src.pipeline.utils import calculate_accuracy
 
     db = DatabaseManager()
 
@@ -109,9 +102,12 @@ def calculate_daily_accuracy(**context):
     valid_preds["date"] = pd.to_datetime(valid_preds["date"]).dt.date
 
     for date, group in valid_preds.groupby("date"):
+        accuracy = calculate_accuracy(group)
+        if accuracy is None:
+            continue
+
         correct = (group["prediction"] == group["actual"]).sum()
         total = len(group)
-        accuracy = correct / total if total > 0 else 0
 
         db.save_daily_metric(
             date=datetime.combine(date, datetime.min.time()),

@@ -1,6 +1,6 @@
 """SQLite database management for predictions and metrics."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -34,7 +34,7 @@ class Prediction(Base):
     probability = Column(Float, nullable=True)
     actual = Column(Integer, nullable=True)  # 0, 1, or NULL if unknown
     model_name = Column(String(100), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class DailyMetric(Base):
@@ -48,7 +48,7 @@ class DailyMetric(Base):
     total_predictions = Column(Integer, nullable=False)
     correct_predictions = Column(Integer, nullable=False)
     model_name = Column(String(100), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class ModelRecord(Base):
@@ -64,7 +64,7 @@ class ModelRecord(Base):
     accuracy_std = Column(Float, nullable=True)
     score = Column(Float, nullable=False)  # Combined score
     is_best = Column(Integer, default=0)  # 1 if current best model
-    trained_at = Column(DateTime, default=datetime.utcnow)
+    trained_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     hyperparameters = Column(String(1000), nullable=True)  # JSON string
 
 

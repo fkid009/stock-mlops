@@ -3,9 +3,10 @@
 interface MetricsSummaryProps {
   data: any;
   isLoading: boolean;
+  error?: Error | null;
 }
 
-export function MetricsSummary({ data, isLoading }: MetricsSummaryProps) {
+export function MetricsSummary({ data, isLoading, error }: MetricsSummaryProps) {
   if (isLoading) {
     return (
       <>
@@ -19,10 +20,19 @@ export function MetricsSummary({ data, isLoading }: MetricsSummaryProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="col-span-4 bg-red-50 rounded-lg shadow p-6 text-center">
+        <p className="text-red-800 font-medium">Failed to load metrics</p>
+        <p className="text-red-600 text-sm mt-1">{error.message}</p>
+      </div>
+    );
+  }
+
   if (!data || !data.data_available) {
     return (
       <div className="col-span-4 bg-white rounded-lg shadow p-6 text-center text-gray-500">
-        No metrics data available
+        No metrics data available yet. Data will appear after predictions are evaluated.
       </div>
     );
   }

@@ -1,20 +1,14 @@
 """Models API router."""
 
-from functools import lru_cache
 from typing import Optional
 
 from fastapi import APIRouter, Query, HTTPException, Depends
 from pydantic import BaseModel
 
 from src.data import DatabaseManager
+from api.dependencies import get_db
 
 router = APIRouter()
-
-
-@lru_cache
-def get_db() -> DatabaseManager:
-    """Get cached DatabaseManager instance."""
-    return DatabaseManager()
 
 
 class ModelInfo(BaseModel):

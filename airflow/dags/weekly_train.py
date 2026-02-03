@@ -20,52 +20,31 @@ default_args = {
 
 def collect_data(**context):
     """Collect stock data for training."""
-    from src.common import get_config
-    from src.data import StockDataCollector, DataCache
+    from src.pipeline import collect_and_cache_data
 
-    config = get_config()
-    collector = StockDataCollector(config.symbols_list)
-    cache = DataCache()
-
-    all_data = []
-    for symbol in config.symbols_list:
-        df = collector.fetch(symbol, days=150)  # Extra days for feature computation
-        if not df.empty:
-            cache.save(symbol, df)
-            all_data.append(df)
+    results = collect_and_cache_data(days=150, use_latest=False)
 
     context["ti"].xcom_push(key="data_collected", value=True)
-    return f"Collected data for {len(all_data)} symbols"
+    return f"Collected data for {len(results)} symbols"
 
 
 def prepare_features(**context):
     """Prepare features for training."""
     import pandas as pd
     from src.common import get_config
-    from src.data import DataCache
     from src.features import FeatureEngineer
+    from src.pipeline import load_and_prepare_features
 
     config = get_config()
-    cache = DataCache()
     engineer = FeatureEngineer()
 
-    # Step 1: Compute features for all symbols (without scaling)
-    all_dfs = []
-    for symbol in config.symbols_list:
-        df = cache.load(symbol)
-        if df.empty:
-            continue
-
-        df = engineer.compute_features(df)
-        df = engineer.compute_target(df)
-        df = engineer.handle_missing_values(df)
-        df["symbol"] = symbol
-        all_dfs.append(df)
+    # Load and prepare features for all symbols
+    all_dfs = load_and_prepare_features(include_target=True)
 
     if not all_dfs:
         raise ValueError("No data available for feature preparation")
 
-    # Step 2: Combine all data and fit scaler on entire dataset
+    # Combine all data and fit scaler
     combined_df = pd.concat(all_dfs, ignore_index=True)
     feature_cols = engineer.get_feature_names()
 
@@ -73,10 +52,8 @@ def prepare_features(**context):
     valid_mask = ~combined_df[feature_cols].isna().any(axis=1) & ~combined_df["target"].isna()
     combined_df = combined_df[valid_mask]
 
-    # Fit scaler on all data
+    # Fit and save scaler
     engineer.fit_scaler(combined_df)
-
-    # Save scaler
     scaler_path = config.data_dir / "scaler.joblib"
     engineer.save_scaler(str(scaler_path))
 
@@ -87,44 +64,21 @@ def prepare_features(**context):
 
 def train_models(**context):
     """Train all configured models."""
-    import pandas as pd
-    from src.common import get_config
-    from src.data import DataCache
-    from src.features import FeatureEngineer
     from src.models import ModelTrainer
     from src.evaluation import ModelValidator
     from src.evaluation.drift import DriftDetector
-
-    config = get_config()
-    cache = DataCache()
+    from src.pipeline import batch_prepare_dataset
 
     # Check if tuning is needed
     drift_detector = DriftDetector()
     should_tune = drift_detector.should_trigger_tuning()
 
-    # Reload data and prepare features
-    engineer = FeatureEngineer()
+    # Load scaler path and prepare dataset
     scaler_path = context["ti"].xcom_pull(key="scaler_path")
     if not scaler_path:
         raise ValueError("Scaler path not found in xcom. Run prepare_features first.")
-    engineer.load_scaler(scaler_path)
 
-    all_X = []
-    all_y = []
-
-    for symbol in config.symbols_list:
-        df = cache.load(symbol)
-        if df.empty:
-            continue
-        X, y = engineer.prepare_dataset(df, fit=False)
-        all_X.append(X)
-        all_y.append(y)
-
-    if not all_X:
-        raise ValueError("No data available for training")
-
-    X = pd.concat(all_X, ignore_index=True)
-    y = pd.concat(all_y, ignore_index=True)
+    X, y = batch_prepare_dataset(scaler_path=scaler_path)
 
     # Split data
     validator = ModelValidator()
@@ -152,42 +106,23 @@ def train_models(**context):
 def register_models(**context):
     """Register trained models with MLflow."""
     import json
-    import pandas as pd
     from src.common import get_config
-    from src.data import DataCache, DatabaseManager
-    from src.features import FeatureEngineer, ALL_FEATURES
+    from src.data import DatabaseManager
+    from src.features import ALL_FEATURES
     from src.models import ModelTrainer, ModelRegistry
+    from src.pipeline import batch_prepare_dataset
 
     config = get_config()
 
     best_type = context["ti"].xcom_pull(key="best_model_type")
     best_score = context["ti"].xcom_pull(key="best_score")
     results = context["ti"].xcom_pull(key="results")
-
-    # Load scaler from previous step
-    cache = DataCache()
-    engineer = FeatureEngineer()
     scaler_path = context["ti"].xcom_pull(key="scaler_path")
-    if scaler_path:
-        engineer.load_scaler(scaler_path)
+
+    # Prepare dataset using common pipeline
+    X, y = batch_prepare_dataset(scaler_path=scaler_path)
 
     trainer = ModelTrainer()
-
-    all_X = []
-    all_y = []
-
-    for symbol in config.symbols_list:
-        df = cache.load(symbol)
-        if df.empty:
-            continue
-        # Use fit=False to reuse the existing scaler
-        X, y = engineer.prepare_dataset(df, fit=False)
-        all_X.append(X)
-        all_y.append(y)
-
-    X = pd.concat(all_X, ignore_index=True)
-    y = pd.concat(all_y, ignore_index=True)
-
     trainer.train_all(X, y, tune=False)
 
     # Register with MLflow

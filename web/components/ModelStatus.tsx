@@ -7,10 +7,11 @@ import { format } from 'date-fns';
 interface ModelStatusProps {
   data: any;
   isLoading: boolean;
+  error?: Error | null;
 }
 
-export function ModelStatus({ data, isLoading }: ModelStatusProps) {
-  const { data: driftData } = useQuery({
+export function ModelStatus({ data, isLoading, error }: ModelStatusProps) {
+  const { data: driftData, error: driftError } = useQuery({
     queryKey: ['drift-status'],
     queryFn: () => api.getDriftStatus(),
   });
@@ -23,6 +24,18 @@ export function ModelStatus({ data, isLoading }: ModelStatusProps) {
           <div className="h-4 bg-gray-200 rounded w-3/4"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
           <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4">Model Status</h3>
+        <div className="text-red-600">
+          <p className="font-medium">Failed to load model status</p>
+          <p className="text-sm mt-1">{error.message}</p>
         </div>
       </div>
     );

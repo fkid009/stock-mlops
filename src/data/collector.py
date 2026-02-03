@@ -74,8 +74,14 @@ class StockDataCollector:
             logger.info(f"Fetched {len(df)} rows for {symbol}")
             return df
 
+        except ConnectionError as e:
+            logger.error(f"Network error fetching {symbol}: {e}")
+            return pd.DataFrame()
+        except ValueError as e:
+            logger.error(f"Invalid data for {symbol}: {e}")
+            return pd.DataFrame()
         except Exception as e:
-            logger.error(f"Error fetching {symbol}: {e}")
+            logger.error(f"Unexpected error fetching {symbol}: {type(e).__name__}: {e}")
             return pd.DataFrame()
 
     def fetch_multiple(

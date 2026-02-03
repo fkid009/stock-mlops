@@ -1,21 +1,16 @@
 """Metrics API router."""
 
 from datetime import datetime, date, time, timedelta
-from functools import lru_cache
 from typing import Optional
 
 from fastapi import APIRouter, Query, HTTPException, Depends
 from pydantic import BaseModel
 
 from src.data import DatabaseManager
+from src.pipeline.utils import calculate_accuracy
+from api.dependencies import get_db
 
 router = APIRouter()
-
-
-@lru_cache
-def get_db() -> DatabaseManager:
-    """Get cached DatabaseManager instance."""
-    return DatabaseManager()
 
 
 class DailyMetricResponse(BaseModel):
@@ -221,8 +216,8 @@ async def get_metrics_by_symbol(
             "message": "No predictions with actual values yet",
         }
 
+    accuracy = calculate_accuracy(valid)
     correct = (valid["prediction"] == valid["actual"]).sum()
-    accuracy = correct / len(valid)
 
     return {
         "symbol": symbol.upper(),

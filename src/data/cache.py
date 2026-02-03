@@ -45,19 +45,35 @@ class DataCache:
         cache_path = self._get_cache_path(symbol)
 
         try:
-            # Load existing cache and merge
+            # Load existing cache and merge incrementally
             if cache_path.exists():
                 existing = pd.read_parquet(cache_path)
-                df = pd.concat([existing, df], ignore_index=True)
-                df = df.drop_duplicates(subset=["date", "symbol"], keep="last")
+                # Ensure date column is datetime
+                df["date"] = pd.to_datetime(df["date"])
+                existing["date"] = pd.to_datetime(existing["date"])
+                # Only add truly new rows
+                max_existing_date = existing["date"].max()
+                new_rows = df[df["date"] > max_existing_date]
+                if not new_rows.empty:
+                    df = pd.concat([existing, new_rows], ignore_index=True)
+                else:
+                    # Update existing rows if dates overlap
+                    df = pd.concat([existing, df], ignore_index=True)
+                    df = df.drop_duplicates(subset=["date", "symbol"], keep="last")
                 df = df.sort_values("date")
 
             df.to_parquet(cache_path, index=False)
             logger.info(f"Cached {len(df)} rows for {symbol}")
             return True
 
+        except PermissionError as e:
+            logger.error(f"Permission denied writing cache for {symbol}: {e}")
+            return False
+        except OSError as e:
+            logger.error(f"IO error caching {symbol}: {e}")
+            return False
         except Exception as e:
-            logger.error(f"Error caching {symbol}: {e}")
+            logger.error(f"Unexpected error caching {symbol}: {type(e).__name__}: {e}")
             return False
 
     def load(
@@ -97,8 +113,14 @@ class DataCache:
             logger.info(f"Loaded {len(df)} rows from cache for {symbol}")
             return df
 
+        except FileNotFoundError:
+            logger.warning(f"Cache file not found for {symbol}")
+            return pd.DataFrame()
+        except PermissionError as e:
+            logger.error(f"Permission denied reading cache for {symbol}: {e}")
+            return pd.DataFrame()
         except Exception as e:
-            logger.error(f"Error loading cache for {symbol}: {e}")
+            logger.error(f"Unexpected error loading cache for {symbol}: {type(e).__name__}: {e}")
             return pd.DataFrame()
 
     def exists(self, symbol: str) -> bool:

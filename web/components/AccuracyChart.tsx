@@ -31,12 +31,24 @@ export function AccuracyChart() {
     );
   }
 
-  if (error || !data?.trend?.length) {
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4">Accuracy Trend</h3>
+        <div className="h-64 flex flex-col items-center justify-center">
+          <p className="text-red-600 font-medium">Failed to load chart data</p>
+          <p className="text-red-500 text-sm mt-1">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data?.trend?.length) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4">Accuracy Trend</h3>
         <div className="h-64 flex items-center justify-center text-gray-500">
-          No trend data available
+          No trend data available yet. Data will appear after predictions are evaluated.
         </div>
       </div>
     );
