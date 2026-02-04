@@ -1,6 +1,6 @@
 """Metrics API router."""
 
-from datetime import datetime, date, time, timedelta
+from datetime import datetime, date, time, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Query, HTTPException, Depends
@@ -57,7 +57,7 @@ async def get_metrics(
         start_dt = datetime.combine(start_date, time.min)
         end_dt = datetime.combine(end_date, time(23, 59, 59, 999999))
     else:
-        end_dt = datetime.now()
+        end_dt = datetime.now(timezone.utc).replace(tzinfo=None)
         start_dt = end_dt - timedelta(days=days)
 
     df = db.get_metrics(start_date=start_dt, end_date=end_dt)
@@ -88,7 +88,7 @@ async def get_metrics_summary(
     db: DatabaseManager = Depends(get_db),
 ):
     """Get metrics summary statistics."""
-    end_dt = datetime.now()
+    end_dt = datetime.now(timezone.utc).replace(tzinfo=None)
     start_dt = end_dt - timedelta(days=days)
 
     df = db.get_metrics(start_date=start_dt, end_date=end_dt)
@@ -131,7 +131,7 @@ async def get_accuracy_trend(
     db: DatabaseManager = Depends(get_db),
 ):
     """Get accuracy trend with moving average."""
-    end_dt = datetime.now()
+    end_dt = datetime.now(timezone.utc).replace(tzinfo=None)
     start_dt = end_dt - timedelta(days=days + window)
 
     df = db.get_metrics(start_date=start_dt, end_date=end_dt)
@@ -197,7 +197,7 @@ async def get_metrics_by_symbol(
 ):
     """Get accuracy metrics for a specific symbol."""
 
-    end_dt = datetime.now()
+    end_dt = datetime.now(timezone.utc).replace(tzinfo=None)
     start_dt = end_dt - timedelta(days=days)
 
     # Get predictions for this symbol

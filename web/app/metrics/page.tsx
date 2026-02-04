@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { AccuracyChart } from '@/components/AccuracyChart';
-import { format } from 'date-fns';
+import { formatDateOnly } from '@/lib/date';
 
 export default function MetricsPage() {
   const [days, setDays] = useState<number>(30);
@@ -163,7 +163,7 @@ export default function MetricsPage() {
                 {metricsData.metrics.map((metric: any, idx: number) => (
                   <tr key={idx} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {format(new Date(metric.date), 'yyyy-MM-dd')}
+                      {formatDateOnly(metric.date)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

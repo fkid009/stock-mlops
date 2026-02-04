@@ -1,6 +1,6 @@
 """Stock data collection from various sources."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import pandas as pd
@@ -41,7 +41,7 @@ class StockDataCollector:
             DataFrame with OHLCV data
         """
         if end_date is None:
-            end_date = datetime.now()
+            end_date = datetime.now(timezone.utc).replace(tzinfo=None)
 
         if start_date is None:
             start_date = end_date - timedelta(days=days)

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { format } from 'date-fns';
+import { formatKST } from '@/lib/date';
 
 export default function ModelsPage() {
   const { data: modelsData, isLoading: modelsLoading } = useQuery({
@@ -43,9 +43,9 @@ export default function ModelsPage() {
             </div>
             <div>
               <p className="text-blue-100 text-sm">Trained At</p>
-              <p className="text-xl font-bold">
+              <p className="text-lg font-bold">
                 {modelsData.best_model.trained_at
-                  ? format(new Date(modelsData.best_model.trained_at), 'MM/dd HH:mm')
+                  ? formatKST(modelsData.best_model.trained_at, 'MM/dd HH:mm')
                   : '-'}
               </p>
             </div>
@@ -172,7 +172,7 @@ export default function ModelsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {model.trained_at
-                        ? format(new Date(model.trained_at), 'yyyy-MM-dd HH:mm')
+                        ? formatKST(model.trained_at)
                         : '-'}
                     </td>
                   </tr>

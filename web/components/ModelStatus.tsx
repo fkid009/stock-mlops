@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { format } from 'date-fns';
+import { formatKST } from '@/lib/date';
 
 interface ModelStatusProps {
   data: any;
@@ -61,7 +61,7 @@ export function ModelStatus({ data, isLoading, error }: ModelStatusProps) {
             <p className="text-sm text-gray-500">Last Trained</p>
             <p className="text-sm text-gray-700">
               {data.trained_at
-                ? format(new Date(data.trained_at), 'yyyy-MM-dd HH:mm')
+                ? formatKST(data.trained_at)
                 : 'Unknown'}
             </p>
           </div>
