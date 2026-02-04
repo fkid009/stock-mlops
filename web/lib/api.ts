@@ -1,18 +1,16 @@
 import axios from 'axios';
 
-const API_URL = {
-  production: 'https://api.lhb99.com',
-  development: 'http://localhost:8000',
-};
+const DEV_API_URL = 'http://localhost:8000';
 
 const getApiBase = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_API_URL || API_URL.development;
+    return apiUrl || DEV_API_URL;
   }
-  if (window.location.hostname.endsWith('lhb99.com')) {
-    return API_URL.production;
+  if (apiUrl && window.location.hostname !== 'localhost') {
+    return apiUrl;
   }
-  return API_URL.development;
+  return DEV_API_URL;
 };
 
 const client = axios.create({

@@ -39,10 +39,13 @@ app = FastAPI(
 )
 
 # CORS middleware
+import os
+site_domain = os.getenv("SITE_DOMAIN", "")
 allowed_origins = [
     "http://localhost:3000",
-    "https://stock.lhb99.com",
 ]
+if site_domain:
+    allowed_origins.append(f"https://{site_domain}")
 
 app.add_middleware(
     CORSMiddleware,

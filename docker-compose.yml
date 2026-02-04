@@ -14,6 +14,7 @@ services:
       - DATABASE_URL=sqlite:///./data/stock.db
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - STOCK_SYMBOLS=${STOCK_SYMBOLS:-AAPL,GOOGL,MSFT}
+      - SITE_DOMAIN=${SITE_DOMAIN:-}
     volumes:
       - ./data:/app/data
       - ./configs:/app/configs
@@ -139,7 +140,7 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=https://api.lhb99.com
+        - NEXT_PUBLIC_API_URL=${API_DOMAIN:+https://${API_DOMAIN}}
     container_name: stock-web
     ports:
       - "3000:3000"
