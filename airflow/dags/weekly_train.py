@@ -22,7 +22,7 @@ def collect_data(**context):
     """Collect stock data for training."""
     from src.pipeline import collect_and_cache_data
 
-    results = collect_and_cache_data(days=150, use_latest=False)
+    results = collect_and_cache_data(days=750, use_latest=False)
 
     context["ti"].xcom_push(key="data_collected", value=True)
     return f"Collected data for {len(results)} symbols"

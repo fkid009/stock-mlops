@@ -27,6 +27,8 @@ data:
     - "AAPL"
     - "GOOGL"
     - "MSFT"
+    - "TSLA"
+    - "NVDA"
 
 database:
   type: "sqlite"
