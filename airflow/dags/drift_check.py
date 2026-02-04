@@ -13,7 +13,7 @@ from airflow.operators.empty import EmptyOperator
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
-    "start_date": datetime(2024, 1, 1),
+    "start_date": datetime(2026, 2, 1),  # Recent start date
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
 }
@@ -84,16 +84,10 @@ def trigger_alert(**context):
 def log_drift_status(**context):
     """Log drift check status to database."""
     import json
-    from datetime import datetime
-    from src.data import DatabaseManager
+    from src.common import get_logger
 
     drift_result = context["ti"].xcom_pull(key="drift_result")
-
-    # You could extend the database schema to store drift history
-    # For now, just log it
-    from src.common import get_logger
     logger = get_logger("drift_check")
-
     logger.info(f"Drift check completed: {json.dumps(drift_result, default=str)}")
 
     return "Status logged"
@@ -156,7 +150,7 @@ with DAG(
     "drift_check",
     default_args=default_args,
     description="Daily performance drift check",
-    schedule_interval="0 1 * * 1-5",  # Weekdays at 10 AM KST (UTC 01:00, after daily prediction)
+    schedule_interval="0 23 * * 1-5",  # Weekdays 18:00 EST (after daily prediction)
     catchup=False,
     tags=["stock", "ml", "monitoring"],
 ) as dag:

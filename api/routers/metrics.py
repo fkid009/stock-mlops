@@ -62,8 +62,18 @@ async def get_metrics(
 
     df = db.get_metrics(start_date=start_dt, end_date=end_dt)
 
-    metrics = df.to_dict(orient="records")
-    avg_accuracy = df["accuracy"].mean() if not df.empty else None
+    # Convert to JSON-serializable format
+    metrics = []
+    for _, row in df.iterrows():
+        metrics.append({
+            "date": row["date"].isoformat() if hasattr(row["date"], "isoformat") else str(row["date"]),
+            "accuracy": float(row["accuracy"]),
+            "total_predictions": int(row["total_predictions"]),
+            "correct_predictions": int(row["correct_predictions"]),
+            "model_name": str(row["model_name"]),
+        })
+
+    avg_accuracy = float(df["accuracy"].mean()) if not df.empty else None
 
     return MetricsListResponse(
         metrics=metrics,
@@ -90,26 +100,27 @@ async def get_metrics_summary(
             "message": "No metrics data available for the specified period",
         }
 
-    # Calculate summary statistics
+    # Calculate summary statistics (convert numpy types to Python types)
+    total_preds = int(df["total_predictions"].sum())
+    correct_preds = int(df["correct_predictions"].sum())
+
     return {
         "period_days": days,
         "data_available": True,
         "total_days_with_data": len(df),
         "accuracy": {
-            "mean": df["accuracy"].mean(),
-            "std": df["accuracy"].std(),
-            "min": df["accuracy"].min(),
-            "max": df["accuracy"].max(),
-            "median": df["accuracy"].median(),
+            "mean": float(df["accuracy"].mean()),
+            "std": float(df["accuracy"].std()) if len(df) > 1 else 0.0,
+            "min": float(df["accuracy"].min()),
+            "max": float(df["accuracy"].max()),
+            "median": float(df["accuracy"].median()),
         },
         "predictions": {
-            "total": df["total_predictions"].sum(),
-            "correct": df["correct_predictions"].sum(),
-            "daily_avg": df["total_predictions"].mean(),
+            "total": total_preds,
+            "correct": correct_preds,
+            "daily_avg": float(df["total_predictions"].mean()),
         },
-        "overall_accuracy": df["correct_predictions"].sum() / df["total_predictions"].sum()
-        if df["total_predictions"].sum() > 0
-        else None,
+        "overall_accuracy": correct_preds / total_preds if total_preds > 0 else None,
     }
 
 
@@ -141,8 +152,8 @@ async def get_accuracy_trend(
     for _, row in df.iterrows():
         trend.append({
             "date": row["date"].isoformat() if hasattr(row["date"], "isoformat") else str(row["date"]),
-            "accuracy": row["accuracy"],
-            "accuracy_ma": row["accuracy_ma"],
+            "accuracy": float(row["accuracy"]),
+            "accuracy_ma": float(row["accuracy_ma"]),
         })
 
     return {

@@ -112,7 +112,7 @@ class DatabaseManager:
         with self.Session() as session:
             # Check for existing prediction on the same day
             date_start = datetime(date.year, date.month, date.day)
-            date_end = datetime(date.year, date.month, date.day, 23, 59, 59)
+            date_end = datetime(date.year, date.month, date.day, 23, 59, 59, 999999)
 
             existing = (
                 session.query(Prediction)
@@ -150,16 +150,25 @@ class DatabaseManager:
 
         Args:
             symbol: Stock ticker symbol
-            date: Prediction date
+            date: Prediction date (matches any time on this date)
             actual: Actual direction (0 or 1)
         """
         with self.Session() as session:
+            # Match any prediction on the same day (regardless of time)
+            date_start = datetime(date.year, date.month, date.day)
+            date_end = datetime(date.year, date.month, date.day, 23, 59, 59, 999999)
+
             session.execute(
                 text(
                     "UPDATE predictions SET actual = :actual "
-                    "WHERE symbol = :symbol AND date = :date"
+                    "WHERE symbol = :symbol AND date >= :date_start AND date <= :date_end"
                 ),
-                {"actual": actual, "symbol": symbol, "date": date},
+                {
+                    "actual": actual,
+                    "symbol": symbol,
+                    "date_start": date_start,
+                    "date_end": date_end,
+                },
             )
             session.commit()
             logger.debug(f"Updated actual for {symbol} on {date.date()}")
@@ -181,6 +190,11 @@ class DatabaseManager:
             correct: Correct predictions
             model_name: Model name
         """
+        # Ensure proper Python types (not numpy types)
+        accuracy = float(accuracy)
+        total = int(total)
+        correct = int(correct)
+
         with self.Session() as session:
             # Update or insert
             existing = session.query(DailyMetric).filter_by(date=date).first()
@@ -323,6 +337,7 @@ class DatabaseManager:
                     "score": record.score,
                     "mlflow_run_id": record.mlflow_run_id,
                     "trained_at": record.trained_at,
+                    "hyperparameters": record.hyperparameters,
                 }
         return None
 

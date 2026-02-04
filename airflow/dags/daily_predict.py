@@ -12,7 +12,7 @@ from airflow.operators.python import PythonOperator
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
-    "start_date": datetime(2024, 1, 1),
+    "start_date": datetime(2026, 2, 1),  # Recent start date
     "retries": 2,
     "retry_delay": timedelta(minutes=10),
 }
@@ -30,7 +30,6 @@ def collect_latest_data(**context):
 
 def update_actuals(**context):
     """Update actual values for previous predictions."""
-    from datetime import datetime, timedelta
     import pandas as pd
     from src.common import get_config, get_logger
     from src.data import DataCache, DatabaseManager
@@ -66,6 +65,10 @@ def update_actuals(**context):
             if abs(change) > 0.001:
                 actual = 1 if change > 0 else 0
                 pred_date = current_row["date"].to_pydatetime()
+
+                # Remove timezone info for database consistency
+                if pred_date.tzinfo is not None:
+                    pred_date = pred_date.replace(tzinfo=None)
 
                 try:
                     db.update_actual(symbol, pred_date, actual)
@@ -120,42 +123,66 @@ def calculate_daily_accuracy(**context):
     return f"Calculated accuracy for {len(valid_preds['date'].unique())} days"
 
 
-def load_best_model(**context):
-    """Load the best model for predictions."""
-    from src.common import get_config
+def train_daily_model(**context):
+    """Train model with latest data using fixed hyperparameters from weekly training."""
+    import json
+    from src.common import get_config, get_logger
     from src.data import DatabaseManager
-    from src.models import ModelPredictor
+    from src.models import ModelTrainer
+    from src.pipeline import batch_prepare_dataset
 
+    logger = get_logger(__name__)
     config = get_config()
     db = DatabaseManager()
 
-    # Get best model info
+    # Get best model config from weekly training
     best_model = db.get_best_model()
+    if not best_model:
+        raise ValueError("No best model found. Run weekly training first.")
 
-    if best_model and best_model.get("mlflow_run_id"):
-        predictor = ModelPredictor.from_mlflow(
-            best_model["mlflow_run_id"],
-            best_model["model_type"],
-        )
-        context["ti"].xcom_push(key="model_source", value="mlflow")
-        context["ti"].xcom_push(key="model_type", value=best_model["model_type"])
-    else:
-        # Fall back to local model
-        model_path = config.data_dir / "best_model.joblib"
-        if not model_path.exists():
-            raise FileNotFoundError("No trained model found")
+    model_type = best_model["model_type"]
+    hyperparameters = (
+        json.loads(best_model["hyperparameters"])
+        if best_model.get("hyperparameters")
+        else {}
+    )
 
-        predictor = ModelPredictor.from_file(str(model_path), "unknown")
-        context["ti"].xcom_push(key="model_source", value="local")
-        context["ti"].xcom_push(key="model_type", value="unknown")
+    logger.info(f"Training {model_type} with hyperparameters from weekly training")
 
-    return "Model loaded successfully"
+    # Prepare dataset with scaler
+    scaler_path = config.data_dir / "scaler.joblib"
+    if not scaler_path.exists():
+        raise FileNotFoundError("Scaler not found. Run weekly training first.")
+
+    X, y = batch_prepare_dataset(scaler_path=str(scaler_path))
+
+    # Train model with fixed hyperparameters
+    trainer = ModelTrainer()
+    trainer.train(X, y, model_type, params=hyperparameters)
+
+    # Save model
+    model_path = config.data_dir / "best_model.joblib"
+    trainer.save_model(model_type, str(model_path))
+
+    # Update model record in DB (mark as new best with updated trained_at)
+    db.save_model_record(
+        model_name=f"{model_type}_daily",
+        model_type=model_type,
+        accuracy=best_model["accuracy"],
+        score=best_model["score"],
+        hyperparameters=json.dumps(hyperparameters),
+        is_best=True,
+    )
+
+    context["ti"].xcom_push(key="model_type", value=model_type)
+    logger.info(f"Trained and saved {model_type} model with latest data")
+    return f"Trained {model_type} model with latest data"
 
 
 def make_predictions(**context):
     """Make predictions for the next trading day."""
-    from datetime import datetime
     import joblib
+    import pandas as pd
     from src.common import get_config, get_logger
     from src.data import DataCache, DatabaseManager
     from src.features import FeatureEngineer
@@ -198,7 +225,6 @@ def make_predictions(**context):
 
     predictions_made = 0
     prediction_errors = 0
-    prediction_date = datetime.now()
 
     for symbol in config.symbols_list:
         try:
@@ -206,6 +232,18 @@ def make_predictions(**context):
             if df.empty:
                 logger.warning(f"No data for {symbol}, skipping")
                 continue
+
+            # Ensure date column is datetime and get the last date
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.sort_values("date").reset_index(drop=True)
+
+            # Use the last data date as prediction date (not datetime.now())
+            # This ensures consistency with update_actuals matching
+            prediction_date = df["date"].iloc[-1].to_pydatetime()
+
+            # Remove timezone info for database consistency
+            if prediction_date.tzinfo is not None:
+                prediction_date = prediction_date.replace(tzinfo=None)
 
             # Prepare features for the latest data point
             df = engineer.compute_features(df)
@@ -225,7 +263,7 @@ def make_predictions(**context):
             # Make prediction
             result = predictor.predict_with_confidence(latest)
 
-            # Save to database
+            # Save to database (save_prediction handles duplicates by updating)
             db.save_prediction(
                 symbol=symbol,
                 date=prediction_date,
@@ -235,6 +273,7 @@ def make_predictions(**context):
             )
 
             predictions_made += 1
+            logger.info(f"Prediction for {symbol} on {prediction_date.date()}: {result['prediction'].iloc[0]}")
 
         except Exception as e:
             logger.error(f"Error predicting {symbol}: {e}")
@@ -251,7 +290,7 @@ with DAG(
     "daily_prediction",
     default_args=default_args,
     description="Daily stock movement predictions",
-    schedule_interval="0 0 * * 1-5",  # Weekdays at 9 AM KST (UTC 00:00)
+    schedule_interval="0 22 * * 1-5",  # Weekdays 17:00 EST (after market close)
     catchup=False,
     tags=["stock", "ml", "prediction"],
 ) as dag:
@@ -271,9 +310,9 @@ with DAG(
         python_callable=calculate_daily_accuracy,
     )
 
-    load_model_task = PythonOperator(
-        task_id="load_best_model",
-        python_callable=load_best_model,
+    train_model_task = PythonOperator(
+        task_id="train_daily_model",
+        python_callable=train_daily_model,
     )
 
     predict_task = PythonOperator(
@@ -282,4 +321,4 @@ with DAG(
     )
 
     collect_task >> update_actuals_task >> accuracy_task
-    collect_task >> load_model_task >> predict_task
+    collect_task >> train_model_task >> predict_task

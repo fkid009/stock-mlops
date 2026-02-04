@@ -58,10 +58,11 @@ class DriftDetector:
         # Get metrics from database
         metrics_df = self.db.get_metrics()
 
-        if len(metrics_df) < self.baseline_window:
+        min_required = self.baseline_window + self.recent_window
+        if len(metrics_df) < min_required:
             logger.warning(
                 f"Not enough data for drift detection: "
-                f"{len(metrics_df)} < {self.baseline_window}"
+                f"{len(metrics_df)} < {min_required} (baseline {self.baseline_window} + recent {self.recent_window})"
             )
             return {
                 "drift_detected": False,
