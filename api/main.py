@@ -41,8 +41,7 @@ app = FastAPI(
 # CORS middleware
 allowed_origins = [
     "http://localhost:3000",
-    "https://lhb99.com",
-    "https://www.lhb99.com",
+    "https://stock.lhb99.com",
 ]
 
 app.add_middleware(

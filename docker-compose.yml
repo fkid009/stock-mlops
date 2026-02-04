@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # FastAPI Backend
@@ -139,12 +138,13 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=https://api.lhb99.com
     container_name: stock-web
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://api:8000
     depends_on:
       - api
     restart: unless-stopped

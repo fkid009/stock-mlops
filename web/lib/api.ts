@@ -1,20 +1,18 @@
 import axios from 'axios';
 
-// Use relative URL in browser (will be proxied or same origin)
-// For SSR/server-side, use the internal Docker URL
+const API_URL = {
+  production: 'https://api.lhb99.com',
+  development: 'http://localhost:8000',
+};
+
 const getApiBase = () => {
   if (typeof window === 'undefined') {
-    // Server-side: use Docker internal network
-    return process.env.NEXT_PUBLIC_API_URL || 'http://api:8000';
+    return process.env.NEXT_PUBLIC_API_URL || API_URL.development;
   }
-  // Client-side: use relative URL or current host
-  // API should be accessible at the same host on port 8000
-  if (window.location.hostname === 'lhb99.com') {
-    return 'https://api.lhb99.com';
+  if (window.location.hostname.endsWith('lhb99.com')) {
+    return API_URL.production;
   }
-  const host = window.location.hostname;
-  return `http://${host}:8000`; 
-  
+  return API_URL.development;
 };
 
 const client = axios.create({
