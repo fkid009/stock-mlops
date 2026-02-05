@@ -23,6 +23,9 @@ data:
   source: "yahoo"
   backup_source: "korea_investment"
   cache_format: "parquet"
+  # Data collection settings
+  weekly_training_days: 750  # Days of historical data for training
+  daily_prediction_days: 30  # Days of recent data for daily predictions
   symbols:
     - "AAPL"
     - "GOOGL"

@@ -20,9 +20,13 @@ default_args = {
 
 def collect_data(**context):
     """Collect stock data for training."""
+    from src.common import get_pipeline_config
     from src.pipeline import collect_and_cache_data
 
-    results = collect_and_cache_data(days=750, use_latest=False)
+    pipeline_config = get_pipeline_config()
+    training_days = pipeline_config.get("data", {}).get("weekly_training_days", 750)
+
+    results = collect_and_cache_data(days=training_days, use_latest=False)
 
     context["ti"].xcom_push(key="data_collected", value=True)
     return f"Collected data for {len(results)} symbols"
@@ -64,6 +68,7 @@ def prepare_features(**context):
 
 def train_models(**context):
     """Train all configured models."""
+    from src.common import Timer
     from src.models import ModelTrainer
     from src.evaluation import ModelValidator
     from src.evaluation.drift import DriftDetector
@@ -78,7 +83,8 @@ def train_models(**context):
     if not scaler_path:
         raise ValueError("Scaler path not found in xcom. Run prepare_features first.")
 
-    X, y = batch_prepare_dataset(scaler_path=scaler_path)
+    with Timer("dataset preparation"):
+        X, y = batch_prepare_dataset(scaler_path=scaler_path)
 
     # Split data
     validator = ModelValidator()
@@ -86,7 +92,8 @@ def train_models(**context):
 
     # Train models
     trainer = ModelTrainer()
-    trainer.train_all(X_train, y_train, tune=should_tune)
+    with Timer(f"training all models (tune={should_tune})"):
+        trainer.train_all(X_train, y_train, tune=should_tune)
 
     # Evaluate models
     results = trainer.evaluate(X_val, y_val)

@@ -10,7 +10,7 @@ from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
 import lightgbm as lgb
 
-from src.common import get_logger, get_models_config
+from src.common import get_logger, get_models_config, timed
 
 logger = get_logger(__name__)
 
@@ -84,6 +84,7 @@ class ModelTrainer:
 
         return model
 
+    @timed
     def train_with_tuning(
         self,
         X_train: pd.DataFrame,
@@ -131,6 +132,7 @@ class ModelTrainer:
 
         return best_model, best_params
 
+    @timed
     def train_all(
         self,
         X_train: pd.DataFrame,

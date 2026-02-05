@@ -7,6 +7,7 @@ from .config import (
     load_yaml_config,
 )
 from .logger import get_logger
+from .timing import timed, Timer
 
 __all__ = [
     "Config",
@@ -16,4 +17,6 @@ __all__ = [
     "get_pipeline_config",
     "load_yaml_config",
     "get_logger",
+    "timed",
+    "Timer",
 ]

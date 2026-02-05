@@ -20,9 +20,13 @@ default_args = {
 
 def collect_latest_data(**context):
     """Collect latest stock data."""
+    from src.common import get_pipeline_config
     from src.pipeline import collect_and_cache_data
 
-    results = collect_and_cache_data(days=30, use_latest=True)
+    pipeline_config = get_pipeline_config()
+    prediction_days = pipeline_config.get("data", {}).get("daily_prediction_days", 30)
+
+    results = collect_and_cache_data(days=prediction_days, use_latest=True)
 
     context["ti"].xcom_push(key="data_date", value=datetime.now().isoformat())
     return f"Collected latest data for {len(results)} symbols"
