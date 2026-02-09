@@ -103,8 +103,9 @@ docker compose up -d
 
 선택 기준: `0.7 * accuracy + 0.3 * stability`
 
-## 피처 (7개)
+## 피처 (15개)
 
+### 기존 피처
 - return_1d: 1일 수익률
 - return_5d: 5일 수익률
 - volume_ratio: 거래량 비율 (20일 평균 대비)
@@ -112,6 +113,16 @@ docker compose up -d
 - ma_5_20_ratio: 5일/20일 이동평균 비율
 - rsi_14: RSI 14일
 - volatility_20: 20일 변동성
+
+### 신규 피처
+- bollinger_position: 볼린저 밴드 내 위치 (0=하단, 1=상단)
+- momentum_10d: 10일 수익률 (중기 모멘텀)
+- macd_signal: MACD 히스토그램 (종가 정규화)
+- volume_price_divergence: 거래량-가격 방향 괴리
+- volatility_ratio: 5일/20일 변동성 비율 (레짐 지표)
+- rsi_divergence: RSI 5일 변화 (모멘텀 가속)
+- gap_ratio: 갭 비율 (시가/전일종가 - 1)
+- close_location_value: 종가의 일봉 내 위치 (0=저가, 1=고가)
 
 ## 개발 명령어
 

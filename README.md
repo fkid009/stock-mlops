@@ -30,10 +30,14 @@ docker compose up -d
 - LightGBM
 - SVM (RBF kernel)
 
-## Features
+## Features (15)
 
-- return_1d, return_5d
-- volume_ratio, high_low_range
-- ma_5_20_ratio, rsi_14, volatility_20
+- return_1d, return_5d, momentum_10d
+- volume_ratio, volume_price_divergence
+- high_low_range, close_location_value
+- ma_5_20_ratio, bollinger_position
+- rsi_14, rsi_divergence
+- volatility_20, volatility_ratio
+- macd_signal, gap_ratio
 
 자세한 내용은 [claude.md](claude.md) 참조

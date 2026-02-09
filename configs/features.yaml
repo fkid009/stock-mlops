@@ -17,6 +17,29 @@ primary_features:
     description: "Daily price range relative to open"
     formula: "(high - low) / open"
 
+  bollinger_position:
+    description: "Position within Bollinger Bands (0=lower, 1=upper)"
+    formula: "(close - (ma20 - 2*std20)) / (4 * std20)"
+    window: 20
+
+  momentum_10d:
+    description: "10-day return (mid-term momentum)"
+    formula: "close.pct_change(10)"
+
+  volume_price_divergence:
+    description: "Divergence between price direction and volume trend"
+    formula: "sign(price_change_5d) * -(vol_ma5/vol_ma20 - 1)"
+    window: 20
+
+  volatility_ratio:
+    description: "5-day / 20-day volatility ratio (regime indicator)"
+    formula: "returns.rolling(5).std() / returns.rolling(20).std()"
+    window: 20
+
+  gap_ratio:
+    description: "Overnight gap (today's open / yesterday's close - 1)"
+    formula: "open / close.shift(1) - 1"
+
 secondary_features:
   ma_5_20_ratio:
     description: "5-day MA / 20-day MA ratio"
@@ -29,6 +52,18 @@ secondary_features:
   volatility_20:
     description: "20-day rolling standard deviation of returns"
     window: 20
+
+  macd_signal:
+    description: "MACD histogram normalized by close price"
+    formula: "(ema12 - ema26 - signal9) / close"
+
+  rsi_divergence:
+    description: "5-day change in RSI (momentum acceleration)"
+    formula: "rsi_14 - rsi_14.shift(5)"
+
+  close_location_value:
+    description: "Close position within daily range (0=low, 1=high)"
+    formula: "(close - low) / (high - low)"
 
 preprocessing:
   scaler: "StandardScaler"
